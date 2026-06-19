@@ -1,0 +1,12 @@
+# Backend
+backend/.gradle/
+backend/build/
+backend/out/
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+
+# System
+.DS_Store
+*.log

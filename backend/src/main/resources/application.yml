@@ -1,0 +1,37 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: groupware-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/itsm_db
+    username: fcf_user
+    password: fcf123!
+    driver-class-name: org.postgresql.Driver
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.groupware.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: NULL
+    call-setters-on-nulls: true
+
+jwt:
+  secret: itsm-secret-key-min-256-bits-for-hmac-sha256-algorithm-security
+  expiration: 86400000
+  refresh-expiration: 604800000
+
+app:
+  upload:
+    path: /app/groupware-uploads
+
+logging:
+  level:
+    root: INFO
+    com.groupware: DEBUG

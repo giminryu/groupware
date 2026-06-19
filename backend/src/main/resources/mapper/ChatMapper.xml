@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.groupware.mapper.ChatMapper">
+
+    <resultMap id="RoomResultMap" type="com.groupware.entity.ChatRoom">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="roomType" column="room_type"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="isArchived" column="is_archived"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="unreadCount" column="unread_count"/>
+        <result property="lastMessage" column="last_message"/>
+        <result property="lastMessageAt" column="last_message_at"/>
+    </resultMap>
+
+    <resultMap id="MemberResultMap" type="com.groupware.entity.ChatRoomMember">
+        <id property="id" column="id"/>
+        <result property="roomId" column="room_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="joinedAt" column="joined_at"/>
+        <result property="lastReadAt" column="last_read_at"/>
+        <result property="isMuted" column="is_muted"/>
+        <result property="userName" column="user_name"/>
+        <result property="userDepartment" column="user_department"/>
+        <result property="userPosition" column="user_position"/>
+    </resultMap>
+
+    <resultMap id="MessageResultMap" type="com.groupware.entity.ChatMessage">
+        <id property="id" column="id"/>
+        <result property="roomId" column="room_id"/>
+        <result property="senderId" column="sender_id"/>
+        <result property="content" column="content"/>
+        <result property="messageType" column="message_type"/>
+        <result property="editedAt" column="edited_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="senderName" column="sender_name"/>
+    </resultMap>
+
+    <!-- 내 채팅방 목록 -->
+    <select id="findRoomsByUserId" resultMap="RoomResultMap">
+        SELECT
+            r.id, r.name, r.room_type, r.created_by, r.is_archived,
+            r.created_at, r.updated_at,
+            (SELECT COUNT(*)
+             FROM gw_messages m
+             WHERE m.room_id = r.id
+               AND m.deleted_at IS NULL
+               AND m.created_at > COALESCE(rm.last_read_at, '1970-01-01')
+            ) AS unread_count,
+            (SELECT m.content FROM gw_messages m
+             WHERE m.room_id = r.id AND m.deleted_at IS NULL
+             ORDER BY m.created_at DESC LIMIT 1) AS last_message,
+            (SELECT m.created_at FROM gw_messages m
+             WHERE m.room_id = r.id AND m.deleted_at IS NULL
+             ORDER BY m.created_at DESC LIMIT 1) AS last_message_at
+        FROM gw_chat_rooms r
+        JOIN gw_chat_room_members rm ON rm.room_id = r.id AND rm.user_id = #{userId}
+        WHERE r.is_archived = FALSE
+        ORDER BY r.updated_at DESC
+    </select>
+
+    <select id="findRoomById" resultMap="RoomResultMap">
+        SELECT id, name, room_type, created_by, is_archived, created_at, updated_at
+        FROM gw_chat_rooms
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertRoom" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_chat_rooms (name, room_type, created_by)
+        VALUES (#{name}, #{roomType}, #{createdBy})
+    </insert>
+
+    <update id="updateRoomUpdatedAt">
+        UPDATE gw_chat_rooms SET updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <!-- 멤버 -->
+    <select id="findMembersByRoomId" resultMap="MemberResultMap">
+        SELECT
+            rm.id, rm.room_id, rm.user_id, rm.joined_at, rm.last_read_at, rm.is_muted,
+            u.name AS user_name,
+            gd.name AS user_department,
+            gp.name AS user_position
+        FROM gw_chat_room_members rm
+        JOIN itsm_users u ON rm.user_id = u.id
+        LEFT JOIN gw_user_profiles gup ON gup.user_id = u.id
+        LEFT JOIN gw_departments gd ON gup.department_id = gd.id
+        LEFT JOIN gw_positions gp ON gup.position_id = gp.id
+        WHERE rm.room_id = #{roomId}
+    </select>
+
+    <insert id="insertMember">
+        INSERT INTO gw_chat_room_members (room_id, user_id)
+        VALUES (#{roomId}, #{userId})
+        ON CONFLICT (room_id, user_id) DO NOTHING
+    </insert>
+
+    <select id="existsMember" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM gw_chat_room_members
+            WHERE room_id = #{roomId} AND user_id = #{userId}
+        )
+    </select>
+
+    <update id="updateLastRead">
+        UPDATE gw_chat_room_members
+        SET last_read_at = NOW()
+        WHERE room_id = #{roomId} AND user_id = #{userId}
+    </update>
+
+    <!-- 1:1 채팅방 조회 -->
+    <select id="findDirectRoom" resultMap="RoomResultMap">
+        SELECT r.id, r.name, r.room_type, r.created_by, r.is_archived, r.created_at, r.updated_at
+        FROM gw_chat_rooms r
+        WHERE r.room_type = 'DIRECT'
+          AND EXISTS (SELECT 1 FROM gw_chat_room_members WHERE room_id = r.id AND user_id = #{userId1})
+          AND EXISTS (SELECT 1 FROM gw_chat_room_members WHERE room_id = r.id AND user_id = #{userId2})
+          AND (SELECT COUNT(*) FROM gw_chat_room_members WHERE room_id = r.id) = 2
+        LIMIT 1
+    </select>
+
+    <!-- 메시지 -->
+    <select id="findMessages" resultMap="MessageResultMap">
+        SELECT
+            m.id, m.room_id, m.sender_id, m.content, m.message_type,
+            m.edited_at, m.deleted_at, m.created_at,
+            u.name AS sender_name
+        FROM gw_messages m
+        JOIN itsm_users u ON m.sender_id = u.id
+        WHERE m.room_id = #{roomId}
+          AND m.deleted_at IS NULL
+          <if test="before != null">
+              AND m.id &lt; #{before}
+          </if>
+        ORDER BY m.created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <insert id="insertMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_messages (room_id, sender_id, content, message_type)
+        VALUES (#{roomId}, #{senderId}, #{content}, #{messageType})
+    </insert>
+
+    <select id="countUnreadMessages" resultType="int">
+        SELECT COUNT(*)
+        FROM gw_messages m
+        JOIN gw_chat_room_members rm ON rm.room_id = m.room_id AND rm.user_id = #{userId}
+        WHERE m.room_id = #{roomId}
+          AND m.deleted_at IS NULL
+          AND m.created_at > COALESCE(rm.last_read_at, '1970-01-01')
+    </select>
+
+</mapper>

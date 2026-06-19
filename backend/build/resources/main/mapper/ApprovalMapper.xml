@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.groupware.mapper.ApprovalMapper">
+
+    <resultMap id="TemplateResultMap" type="com.groupware.entity.ApprovalTemplate">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="documentType" column="document_type"/>
+        <result property="formFields" column="form_fields"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="LineResultMap" type="com.groupware.entity.ApprovalLine">
+        <id property="id" column="id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="approverId" column="approver_id"/>
+        <result property="sequence" column="sequence"/>
+        <result property="status" column="status"/>
+        <result property="approvedAt" column="approved_at"/>
+        <result property="comment" column="comment"/>
+        <result property="delegatedTo" column="delegated_to"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="approverName" column="approver_name"/>
+        <result property="approverDepartment" column="approver_department"/>
+        <result property="delegatedToName" column="delegated_to_name"/>
+    </resultMap>
+
+    <resultMap id="DocumentResultMap" type="com.groupware.entity.ApprovalDocument">
+        <id property="id" column="id"/>
+        <result property="templateId" column="template_id"/>
+        <result property="documentType" column="document_type"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="formData" column="form_data"/>
+        <result property="status" column="status"/>
+        <result property="applicantId" column="applicant_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="submittedAt" column="submitted_at"/>
+        <result property="completedAt" column="completed_at"/>
+        <result property="rejectionReason" column="rejection_reason"/>
+        <result property="applicantName" column="applicant_name"/>
+        <result property="templateName" column="template_name"/>
+        <result property="totalLines" column="total_lines"/>
+        <result property="approvedLines" column="approved_lines"/>
+    </resultMap>
+
+    <!-- 템플릿 조회 -->
+    <select id="findAllTemplates" resultMap="TemplateResultMap">
+        SELECT id, name, document_type, form_fields::text AS form_fields, created_at
+        FROM gw_approval_templates
+        ORDER BY id
+    </select>
+
+    <select id="findTemplateById" resultMap="TemplateResultMap">
+        SELECT id, name, document_type, form_fields::text AS form_fields, created_at
+        FROM gw_approval_templates
+        WHERE id = #{id}
+    </select>
+
+    <!-- 문서 목록 -->
+    <select id="findDocuments" resultMap="DocumentResultMap">
+        SELECT
+            d.id, d.template_id, d.document_type, d.title, d.content,
+            d.form_data::text AS form_data, d.status, d.applicant_id,
+            d.created_at, d.submitted_at, d.completed_at, d.rejection_reason,
+            u.name AS applicant_name,
+            t.name AS template_name,
+            (SELECT COUNT(*) FROM gw_approval_lines WHERE document_id = d.id) AS total_lines,
+            (SELECT COUNT(*) FROM gw_approval_lines WHERE document_id = d.id AND status = 'APPROVED') AS approved_lines
+        FROM gw_approval_documents d
+        JOIN itsm_users u ON d.applicant_id = u.id
+        LEFT JOIN gw_approval_templates t ON d.template_id = t.id
+        <where>
+            <choose>
+                <when test="type == 'RECEIVED'">
+                    AND EXISTS (
+                        SELECT 1 FROM gw_approval_lines
+                        WHERE document_id = d.id AND approver_id = #{userId}
+                    )
+                </when>
+                <otherwise>
+                    AND d.applicant_id = #{userId}
+                </otherwise>
+            </choose>
+            <if test="status != null and status != ''">
+                AND d.status = #{status}
+            </if>
+        </where>
+        ORDER BY d.created_at DESC
+    </select>
+
+    <!-- 문서 상세 -->
+    <select id="findDocumentById" resultMap="DocumentResultMap">
+        SELECT
+            d.id, d.template_id, d.document_type, d.title, d.content,
+            d.form_data::text AS form_data, d.status, d.applicant_id,
+            d.created_at, d.submitted_at, d.completed_at, d.rejection_reason,
+            u.name AS applicant_name,
+            t.name AS template_name,
+            (SELECT COUNT(*) FROM gw_approval_lines WHERE document_id = d.id) AS total_lines,
+            (SELECT COUNT(*) FROM gw_approval_lines WHERE document_id = d.id AND status = 'APPROVED') AS approved_lines
+        FROM gw_approval_documents d
+        JOIN itsm_users u ON d.applicant_id = u.id
+        LEFT JOIN gw_approval_templates t ON d.template_id = t.id
+        WHERE d.id = #{id}
+    </select>
+
+    <!-- 문서 등록 -->
+    <insert id="insertDocument" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_approval_documents
+            (template_id, document_type, title, content, form_data, status, applicant_id)
+        VALUES
+            (#{templateId}, #{documentType}, #{title}, #{content},
+             #{formData}::jsonb, #{status}, #{applicantId})
+    </insert>
+
+    <!-- 문서 상태 업데이트 -->
+    <update id="updateDocumentStatus">
+        UPDATE gw_approval_documents
+        SET status = #{status}
+            <if test="submittedAt != null">, submitted_at = #{submittedAt}</if>
+            <if test="completedAt != null">, completed_at = #{completedAt}</if>
+            <if test="rejectionReason != null">, rejection_reason = #{rejectionReason}</if>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 문서 삭제 -->
+    <delete id="deleteDocument">
+        DELETE FROM gw_approval_documents WHERE id = #{id} AND status = 'DRAFT'
+    </delete>
+
+    <!-- 결재선 조회 -->
+    <select id="findLinesByDocumentId" resultMap="LineResultMap">
+        SELECT
+            al.id, al.document_id, al.approver_id, al.sequence, al.status,
+            al.approved_at, al.comment, al.delegated_to, al.created_at,
+            u.name AS approver_name,
+            gd.name AS approver_department,
+            du.name AS delegated_to_name
+        FROM gw_approval_lines al
+        JOIN itsm_users u ON al.approver_id = u.id
+        LEFT JOIN gw_user_profiles gup ON gup.user_id = u.id
+        LEFT JOIN gw_departments gd ON gup.department_id = gd.id
+        LEFT JOIN itsm_users du ON al.delegated_to = du.id
+        WHERE al.document_id = #{documentId}
+        ORDER BY al.sequence
+    </select>
+
+    <select id="findLineById" resultMap="LineResultMap">
+        SELECT
+            al.id, al.document_id, al.approver_id, al.sequence, al.status,
+            al.approved_at, al.comment, al.delegated_to, al.created_at,
+            u.name AS approver_name
+        FROM gw_approval_lines al
+        JOIN itsm_users u ON al.approver_id = u.id
+        WHERE al.id = #{id}
+    </select>
+
+    <!-- 현재 결재 대기 중인 결재선 (특정 결재자의) -->
+    <select id="findCurrentPendingLine" resultMap="LineResultMap">
+        SELECT
+            al.id, al.document_id, al.approver_id, al.sequence, al.status,
+            al.approved_at, al.comment, al.delegated_to, al.created_at
+        FROM gw_approval_lines al
+        WHERE al.document_id = #{documentId}
+          AND al.approver_id = #{approverId}
+          AND al.status = 'PENDING'
+        ORDER BY al.sequence
+        LIMIT 1
+    </select>
+
+    <!-- 다음 결재자 -->
+    <select id="findNextLine" resultMap="LineResultMap">
+        SELECT
+            al.id, al.document_id, al.approver_id, al.sequence, al.status,
+            al.approved_at, al.comment, al.delegated_to, al.created_at,
+            u.name AS approver_name
+        FROM gw_approval_lines al
+        JOIN itsm_users u ON al.approver_id = u.id
+        WHERE al.document_id = #{documentId}
+          AND al.sequence > #{sequence}
+        ORDER BY al.sequence
+        LIMIT 1
+    </select>
+
+    <!-- 결재선 등록 -->
+    <insert id="insertLine" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_approval_lines (document_id, approver_id, sequence, status)
+        VALUES (#{documentId}, #{approverId}, #{sequence}, 'PENDING')
+    </insert>
+
+    <!-- 결재선 상태 업데이트 -->
+    <update id="updateLineStatus">
+        UPDATE gw_approval_lines
+        SET status = #{status},
+            comment = #{comment},
+            approved_at = #{approvedAt}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 결재선 수 -->
+    <select id="countLines" resultType="int">
+        SELECT COUNT(*) FROM gw_approval_lines WHERE document_id = #{documentId}
+    </select>
+
+    <select id="countApprovedLines" resultType="int">
+        SELECT COUNT(*) FROM gw_approval_lines
+        WHERE document_id = #{documentId} AND status = 'APPROVED'
+    </select>
+
+    <!-- 내가 결재해야 할 목록 -->
+    <select id="findPendingForApprover" resultMap="DocumentResultMap">
+        SELECT
+            d.id, d.template_id, d.document_type, d.title, d.content,
+            d.form_data::text AS form_data, d.status, d.applicant_id,
+            d.created_at, d.submitted_at, d.completed_at, d.rejection_reason,
+            u.name AS applicant_name,
+            t.name AS template_name,
+            (SELECT COUNT(*) FROM gw_approval_lines WHERE document_id = d.id) AS total_lines,
+            (SELECT COUNT(*) FROM gw_approval_lines WHERE document_id = d.id AND status = 'APPROVED') AS approved_lines
+        FROM gw_approval_documents d
+        JOIN itsm_users u ON d.applicant_id = u.id
+        LEFT JOIN gw_approval_templates t ON d.template_id = t.id
+        WHERE d.status = 'SUBMITTED'
+          AND EXISTS (
+              SELECT 1 FROM gw_approval_lines
+              WHERE document_id = d.id AND approver_id = #{approverId} AND status = 'PENDING'
+          )
+        ORDER BY d.submitted_at DESC
+    </select>
+
+    <!-- 이력 등록 -->
+    <insert id="insertHistory">
+        INSERT INTO gw_approval_history (document_id, action, actor_id, comment)
+        VALUES (#{documentId}, #{action}, #{actorId}, #{comment})
+    </insert>
+
+</mapper>

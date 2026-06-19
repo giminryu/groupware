@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.groupware.mapper.BoardMapper">
+
+    <resultMap id="BoardResultMap" type="com.groupware.entity.Board">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="departmentId" column="department_id"/>
+        <result property="description" column="description"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="PostResultMap" type="com.groupware.entity.Post">
+        <id property="id" column="id"/>
+        <result property="boardId" column="board_id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="authorId" column="author_id"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="authorName" column="author_name"/>
+        <result property="boardName" column="board_name"/>
+        <result property="commentCount" column="comment_count"/>
+    </resultMap>
+
+    <resultMap id="CommentResultMap" type="com.groupware.entity.Comment">
+        <id property="id" column="id"/>
+        <result property="postId" column="post_id"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="authorId" column="author_id"/>
+        <result property="content" column="content"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="authorName" column="author_name"/>
+    </resultMap>
+
+    <select id="findAllBoards" resultMap="BoardResultMap">
+        SELECT id, name, department_id, description, created_at
+        FROM gw_boards
+        ORDER BY id
+    </select>
+
+    <select id="findBoardById" resultMap="BoardResultMap">
+        SELECT id, name, department_id, description, created_at
+        FROM gw_boards
+        WHERE id = #{id}
+    </select>
+
+    <select id="findPostsByBoard" resultMap="PostResultMap">
+        SELECT
+            p.id,
+            p.board_id,
+            p.title,
+            p.content,
+            p.author_id,
+            p.view_count,
+            p.created_at,
+            p.updated_at,
+            u.name AS author_name,
+            b.name AS board_name,
+            (SELECT COUNT(*) FROM gw_comments c WHERE c.post_id = p.id) AS comment_count
+        FROM gw_posts p
+        JOIN itsm_users u ON p.author_id = u.id
+        JOIN gw_boards b ON p.board_id = b.id
+        WHERE p.board_id = #{boardId}
+        <if test="search != null and search != ''">
+            AND (p.title LIKE CONCAT('%', #{search}, '%') OR p.content LIKE CONCAT('%', #{search}, '%'))
+        </if>
+        ORDER BY p.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPostsByBoard" resultType="int">
+        SELECT COUNT(*)
+        FROM gw_posts p
+        WHERE p.board_id = #{boardId}
+        <if test="search != null and search != ''">
+            AND (p.title LIKE CONCAT('%', #{search}, '%') OR p.content LIKE CONCAT('%', #{search}, '%'))
+        </if>
+    </select>
+
+    <select id="findPostById" resultMap="PostResultMap">
+        SELECT
+            p.id,
+            p.board_id,
+            p.title,
+            p.content,
+            p.author_id,
+            p.view_count,
+            p.created_at,
+            p.updated_at,
+            u.name AS author_name,
+            b.name AS board_name,
+            (SELECT COUNT(*) FROM gw_comments c WHERE c.post_id = p.id) AS comment_count
+        FROM gw_posts p
+        JOIN itsm_users u ON p.author_id = u.id
+        JOIN gw_boards b ON p.board_id = b.id
+        WHERE p.id = #{id}
+    </select>
+
+    <insert id="insertPost" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_posts (board_id, title, content, author_id)
+        VALUES (#{boardId}, #{title}, #{content}, #{authorId})
+    </insert>
+
+    <update id="updatePost">
+        UPDATE gw_posts
+        SET title = #{title},
+            content = #{content},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deletePost">
+        DELETE FROM gw_posts WHERE id = #{id}
+    </delete>
+
+    <update id="incrementPostViewCount">
+        UPDATE gw_posts SET view_count = view_count + 1 WHERE id = #{id}
+    </update>
+
+    <select id="findCommentsByPost" resultMap="CommentResultMap">
+        SELECT
+            c.id,
+            c.post_id,
+            c.parent_id,
+            c.author_id,
+            c.content,
+            c.created_at,
+            c.updated_at,
+            u.name AS author_name
+        FROM gw_comments c
+        JOIN itsm_users u ON c.author_id = u.id
+        WHERE c.post_id = #{postId}
+        ORDER BY c.created_at ASC
+    </select>
+
+    <select id="findCommentById" resultMap="CommentResultMap">
+        SELECT
+            c.id,
+            c.post_id,
+            c.parent_id,
+            c.author_id,
+            c.content,
+            c.created_at,
+            c.updated_at,
+            u.name AS author_name
+        FROM gw_comments c
+        JOIN itsm_users u ON c.author_id = u.id
+        WHERE c.id = #{id}
+    </select>
+
+    <insert id="insertComment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_comments (post_id, parent_id, author_id, content)
+        VALUES (#{postId}, #{parentId}, #{authorId}, #{content})
+    </insert>
+
+    <delete id="deleteComment">
+        DELETE FROM gw_comments WHERE id = #{id}
+    </delete>
+
+</mapper>

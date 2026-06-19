@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.groupware.mapper.FileMapper">
+
+    <resultMap id="FileResultMap" type="com.groupware.entity.FileInfo">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="ownerId" column="owner_id"/>
+        <result property="fileType" column="file_type"/>
+        <result property="size" column="size"/>
+        <result property="mimeType" column="mime_type"/>
+        <result property="storagePath" column="storage_path"/>
+        <result property="visibility" column="visibility"/>
+        <result property="departmentId" column="department_id"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="deletedAt" column="deleted_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="ownerName" column="owner_name"/>
+        <result property="departmentName" column="department_name"/>
+    </resultMap>
+
+    <select id="findFiles" resultMap="FileResultMap">
+        SELECT
+            f.id, f.name, f.parent_id, f.owner_id,
+            f.file_type, f.size, f.mime_type, f.storage_path,
+            f.visibility, f.department_id, f.is_deleted, f.deleted_at,
+            f.created_at, f.updated_at,
+            u.name AS owner_name,
+            d.name AS department_name
+        FROM gw_files f
+        JOIN itsm_users u ON f.owner_id = u.id
+        LEFT JOIN gw_departments d ON f.department_id = d.id
+        WHERE f.is_deleted = false
+        <choose>
+            <when test="parentId != null">
+                AND f.parent_id = #{parentId}
+            </when>
+            <otherwise>
+                AND f.parent_id IS NULL
+            </otherwise>
+        </choose>
+        <if test="departmentId != null">
+            AND (f.department_id = #{departmentId} OR f.visibility = 'PUBLIC')
+        </if>
+        <if test="departmentId == null and ownerId != null">
+            AND (f.owner_id = #{ownerId} OR f.visibility = 'PUBLIC')
+        </if>
+        ORDER BY f.file_type DESC, f.name ASC
+    </select>
+
+    <select id="findSharedFiles" resultMap="FileResultMap">
+        SELECT
+            f.id, f.name, f.parent_id, f.owner_id,
+            f.file_type, f.size, f.mime_type, f.storage_path,
+            f.visibility, f.department_id, f.is_deleted, f.deleted_at,
+            f.created_at, f.updated_at,
+            u.name AS owner_name,
+            d.name AS department_name
+        FROM gw_files f
+        JOIN itsm_users u ON f.owner_id = u.id
+        LEFT JOIN gw_departments d ON f.department_id = d.id
+        WHERE f.is_deleted = false
+          AND f.visibility IN ('PUBLIC', 'DEPARTMENT')
+        ORDER BY f.created_at DESC
+    </select>
+
+    <select id="findById" resultMap="FileResultMap">
+        SELECT
+            f.id, f.name, f.parent_id, f.owner_id,
+            f.file_type, f.size, f.mime_type, f.storage_path,
+            f.visibility, f.department_id, f.is_deleted, f.deleted_at,
+            f.created_at, f.updated_at,
+            u.name AS owner_name,
+            d.name AS department_name
+        FROM gw_files f
+        JOIN itsm_users u ON f.owner_id = u.id
+        LEFT JOIN gw_departments d ON f.department_id = d.id
+        WHERE f.id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_files (name, parent_id, owner_id, file_type, size, mime_type, storage_path, visibility, department_id)
+        VALUES (#{name}, #{parentId}, #{ownerId}, #{fileType}, #{size}, #{mimeType}, #{storagePath}, #{visibility}, #{departmentId})
+    </insert>
+
+    <update id="update">
+        UPDATE gw_files
+        SET name = #{name},
+            visibility = #{visibility},
+            department_id = #{departmentId},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="softDelete">
+        UPDATE gw_files
+        SET is_deleted = true,
+            deleted_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

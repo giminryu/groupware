@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.groupware.mapper.NoticeMapper">
+
+    <resultMap id="NoticeResultMap" type="com.groupware.entity.Notice">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="authorId" column="author_id"/>
+        <result property="visibility" column="visibility"/>
+        <result property="viewRequired" column="view_required"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="authorName" column="author_name"/>
+        <result property="isViewed" column="is_viewed"/>
+    </resultMap>
+
+    <select id="findAll" resultMap="NoticeResultMap">
+        SELECT
+            n.id,
+            n.title,
+            n.content,
+            n.author_id,
+            n.visibility,
+            n.view_required,
+            n.view_count,
+            n.created_at,
+            n.updated_at,
+            u.name AS author_name,
+            CASE WHEN nv.id IS NOT NULL THEN true ELSE false END AS is_viewed
+        FROM gw_notices n
+        JOIN itsm_users u ON n.author_id = u.id
+        LEFT JOIN gw_notice_views nv ON nv.notice_id = n.id AND nv.user_id = #{currentUserId}
+        <where>
+            <if test="search != null and search != ''">
+                AND (n.title LIKE CONCAT('%', #{search}, '%') OR n.content LIKE CONCAT('%', #{search}, '%'))
+            </if>
+        </where>
+        ORDER BY n.created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*)
+        FROM gw_notices n
+        <where>
+            <if test="search != null and search != ''">
+                AND (n.title LIKE CONCAT('%', #{search}, '%') OR n.content LIKE CONCAT('%', #{search}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <select id="findById" resultMap="NoticeResultMap">
+        SELECT
+            n.id,
+            n.title,
+            n.content,
+            n.author_id,
+            n.visibility,
+            n.view_required,
+            n.view_count,
+            n.created_at,
+            n.updated_at,
+            u.name AS author_name,
+            CASE WHEN nv.id IS NOT NULL THEN true ELSE false END AS is_viewed
+        FROM gw_notices n
+        JOIN itsm_users u ON n.author_id = u.id
+        LEFT JOIN gw_notice_views nv ON nv.notice_id = n.id AND nv.user_id = #{currentUserId}
+        WHERE n.id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_notices (title, content, author_id, visibility, view_required)
+        VALUES (#{title}, #{content}, #{authorId}, #{visibility}, #{viewRequired})
+    </insert>
+
+    <update id="update">
+        UPDATE gw_notices
+        SET title = #{title},
+            content = #{content},
+            visibility = #{visibility},
+            view_required = #{viewRequired},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM gw_notices WHERE id = #{id}
+    </delete>
+
+    <update id="incrementViewCount">
+        UPDATE gw_notices SET view_count = view_count + 1 WHERE id = #{id}
+    </update>
+
+    <insert id="insertView">
+        INSERT INTO gw_notice_views (notice_id, user_id)
+        VALUES (#{noticeId}, #{userId})
+        ON CONFLICT (notice_id, user_id) DO NOTHING
+    </insert>
+
+    <select id="existsView" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM gw_notice_views
+            WHERE notice_id = #{noticeId} AND user_id = #{userId}
+        )
+    </select>
+
+</mapper>

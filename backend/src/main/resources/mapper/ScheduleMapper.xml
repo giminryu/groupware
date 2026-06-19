@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.groupware.mapper.ScheduleMapper">
+
+    <resultMap id="ScheduleResultMap" type="com.groupware.entity.Schedule">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="ownerId" column="owner_id"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="location" column="location"/>
+        <result property="isAllDay" column="is_all_day"/>
+        <result property="visibility" column="visibility"/>
+        <result property="color" column="color"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="ownerName" column="owner_name"/>
+    </resultMap>
+
+    <resultMap id="RoomResultMap" type="com.groupware.entity.MeetingRoom">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="capacity" column="capacity"/>
+        <result property="location" column="location"/>
+        <result property="description" column="description"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="BookingResultMap" type="com.groupware.entity.RoomBooking">
+        <id property="id" column="id"/>
+        <result property="roomId" column="room_id"/>
+        <result property="scheduleId" column="schedule_id"/>
+        <result property="bookedBy" column="booked_by"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="purpose" column="purpose"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="bookedByName" column="booked_by_name"/>
+        <result property="roomName" column="room_name"/>
+    </resultMap>
+
+    <select id="findMySchedules" resultMap="ScheduleResultMap">
+        SELECT DISTINCT
+            s.id, s.title, s.description, s.owner_id,
+            s.start_time, s.end_time, s.location,
+            s.is_all_day, s.visibility, s.color,
+            s.created_at, s.updated_at,
+            u.name AS owner_name
+        FROM gw_schedules s
+        JOIN itsm_users u ON s.owner_id = u.id
+        LEFT JOIN gw_schedule_attendees sa ON sa.schedule_id = s.id
+        WHERE (s.owner_id = #{userId} OR sa.user_id = #{userId})
+        <if test="start != null">
+            AND s.end_time >= #{start}
+        </if>
+        <if test="end != null">
+            AND s.start_time &lt;= #{end}
+        </if>
+        ORDER BY s.start_time ASC
+    </select>
+
+    <select id="findTeamSchedules" resultMap="ScheduleResultMap">
+        SELECT DISTINCT
+            s.id, s.title, s.description, s.owner_id,
+            s.start_time, s.end_time, s.location,
+            s.is_all_day, s.visibility, s.color,
+            s.created_at, s.updated_at,
+            u.name AS owner_name
+        FROM gw_schedules s
+        JOIN itsm_users u ON s.owner_id = u.id
+        JOIN gw_user_profiles up ON u.id = up.user_id
+        JOIN gw_user_profiles myProfile ON myProfile.user_id = #{userId}
+        WHERE s.visibility IN ('PUBLIC', 'TEAM')
+          AND up.department_id = myProfile.department_id
+        <if test="start != null">
+            AND s.end_time >= #{start}
+        </if>
+        <if test="end != null">
+            AND s.start_time &lt;= #{end}
+        </if>
+        ORDER BY s.start_time ASC
+    </select>
+
+    <select id="findById" resultMap="ScheduleResultMap">
+        SELECT
+            s.id, s.title, s.description, s.owner_id,
+            s.start_time, s.end_time, s.location,
+            s.is_all_day, s.visibility, s.color,
+            s.created_at, s.updated_at,
+            u.name AS owner_name
+        FROM gw_schedules s
+        JOIN itsm_users u ON s.owner_id = u.id
+        WHERE s.id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_schedules (title, description, owner_id, start_time, end_time, location, is_all_day, visibility, color)
+        VALUES (#{title}, #{description}, #{ownerId}, #{startTime}, #{endTime}, #{location}, #{isAllDay}, #{visibility}, #{color})
+    </insert>
+
+    <update id="update">
+        UPDATE gw_schedules
+        SET title = #{title},
+            description = #{description},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            location = #{location},
+            is_all_day = #{isAllDay},
+            visibility = #{visibility},
+            color = #{color},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM gw_schedules WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteAttendees">
+        DELETE FROM gw_schedule_attendees WHERE schedule_id = #{scheduleId}
+    </delete>
+
+    <insert id="insertAttendee">
+        INSERT INTO gw_schedule_attendees (schedule_id, user_id)
+        VALUES (#{scheduleId}, #{userId})
+        ON CONFLICT (schedule_id, user_id) DO NOTHING
+    </insert>
+
+    <select id="findAttendeeIds" resultType="long">
+        SELECT user_id FROM gw_schedule_attendees
+        WHERE schedule_id = #{scheduleId}
+    </select>
+
+    <!-- 회의실 -->
+    <select id="findAllRooms" resultMap="RoomResultMap">
+        SELECT id, name, capacity, location, description, created_at
+        FROM gw_meeting_rooms
+        ORDER BY id
+    </select>
+
+    <select id="findRoomById" resultMap="RoomResultMap">
+        SELECT id, name, capacity, location, description, created_at
+        FROM gw_meeting_rooms
+        WHERE id = #{id}
+    </select>
+
+    <select id="findBookingsByRoom" resultMap="BookingResultMap">
+        SELECT
+            rb.id, rb.room_id, rb.schedule_id, rb.booked_by,
+            rb.start_time, rb.end_time, rb.purpose, rb.created_at,
+            u.name AS booked_by_name,
+            mr.name AS room_name
+        FROM gw_room_bookings rb
+        JOIN itsm_users u ON rb.booked_by = u.id
+        JOIN gw_meeting_rooms mr ON rb.room_id = mr.id
+        WHERE rb.room_id = #{roomId}
+        <if test="start != null">
+            AND rb.end_time >= #{start}
+        </if>
+        <if test="end != null">
+            AND rb.start_time &lt;= #{end}
+        </if>
+        ORDER BY rb.start_time ASC
+    </select>
+
+    <select id="findBookingById" resultMap="BookingResultMap">
+        SELECT
+            rb.id, rb.room_id, rb.schedule_id, rb.booked_by,
+            rb.start_time, rb.end_time, rb.purpose, rb.created_at,
+            u.name AS booked_by_name,
+            mr.name AS room_name
+        FROM gw_room_bookings rb
+        JOIN itsm_users u ON rb.booked_by = u.id
+        JOIN gw_meeting_rooms mr ON rb.room_id = mr.id
+        WHERE rb.id = #{id}
+    </select>
+
+    <insert id="insertBooking" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_room_bookings (room_id, schedule_id, booked_by, start_time, end_time, purpose)
+        VALUES (#{roomId}, #{scheduleId}, #{bookedBy}, #{startTime}, #{endTime}, #{purpose})
+    </insert>
+
+    <delete id="deleteBooking">
+        DELETE FROM gw_room_bookings WHERE id = #{id}
+    </delete>
+
+    <select id="existsConflictBooking" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM gw_room_bookings
+            WHERE room_id = #{roomId}
+              AND start_time &lt; #{endTime}
+              AND end_time > #{startTime}
+              <if test="excludeId != null">
+                  AND id != #{excludeId}
+              </if>
+        )
+    </select>
+
+</mapper>

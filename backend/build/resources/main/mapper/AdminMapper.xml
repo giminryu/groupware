@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.groupware.mapper.AdminMapper">
+
+    <!-- ========== 사용자 결과 매핑 ========== -->
+    <resultMap id="AdminUserResultMap" type="com.groupware.dto.response.EmployeeResponse">
+        <id property="id" column="profile_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="name" column="name"/>
+        <result property="email" column="email"/>
+        <result property="phone" column="phone"/>
+        <result property="department" column="department_name"/>
+        <result property="position" column="position_name"/>
+        <result property="role" column="role"/>
+        <result property="profileImagePath" column="profile_image_path"/>
+        <result property="joinedDate" column="joined_date"/>
+    </resultMap>
+
+    <!-- 부서 결과 매핑 -->
+    <resultMap id="AdminDeptResultMap" type="com.groupware.dto.response.DepartmentResponse">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="managerName" column="manager_name"/>
+        <result property="contact" column="contact"/>
+        <result property="location" column="location"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="memberCount" column="member_count"/>
+    </resultMap>
+
+    <!-- 직급 결과 매핑 -->
+    <resultMap id="AdminPositionResultMap" type="com.groupware.dto.response.PositionResponse">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="level" column="level"/>
+        <result property="approvalRank" column="approval_rank"/>
+    </resultMap>
+
+    <!-- ========== 사용자 조회 ========== -->
+    <select id="findAllUsersForAdmin" resultMap="AdminUserResultMap">
+        SELECT
+            p.id AS profile_id,
+            u.id AS user_id,
+            u.username,
+            u.name,
+            u.email,
+            p.phone,
+            d.name AS department_name,
+            pos.name AS position_name,
+            u.role,
+            p.profile_image_path,
+            p.joined_date
+        FROM itsm_users u
+        LEFT JOIN gw_user_profiles p ON u.id = p.user_id
+        LEFT JOIN gw_departments d ON p.department_id = d.id
+        LEFT JOIN gw_positions pos ON p.position_id = pos.id
+        WHERE u.active = true
+        <if test="search != null and search != ''">
+            AND (
+                u.name LIKE CONCAT('%', #{search}, '%')
+                OR u.username LIKE CONCAT('%', #{search}, '%')
+                OR u.email LIKE CONCAT('%', #{search}, '%')
+            )
+        </if>
+        ORDER BY u.name
+    </select>
+
+    <!-- 사용자 프로필 upsert (없으면 insert, 있으면 update) -->
+    <insert id="upsertUserProfile">
+        INSERT INTO gw_user_profiles (user_id, department_id, position_id, phone, joined_date, updated_at)
+        VALUES (#{userId}, #{departmentId}, #{positionId}, #{phone},
+                <if test="joinedDate != null">CAST(#{joinedDate} AS DATE)</if>
+                <if test="joinedDate == null">NULL</if>
+                , NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+            department_id = EXCLUDED.department_id,
+            position_id   = EXCLUDED.position_id,
+            phone         = EXCLUDED.phone,
+            joined_date   = EXCLUDED.joined_date,
+            updated_at    = NOW()
+    </insert>
+
+    <!-- ========== 부서 관리 ========== -->
+    <select id="findAllDepartmentsForAdmin" resultMap="AdminDeptResultMap">
+        SELECT
+            d.id,
+            d.name,
+            d.parent_id,
+            u.name AS manager_name,
+            d.contact,
+            d.location,
+            d.sort_order,
+            (SELECT COUNT(*) FROM gw_user_profiles p2 WHERE p2.department_id = d.id) AS member_count
+        FROM gw_departments d
+        LEFT JOIN itsm_users u ON d.manager_id = u.id
+        ORDER BY d.sort_order, d.id
+    </select>
+
+    <select id="findDepartmentEntityById" resultType="com.groupware.entity.Department">
+        SELECT id, name, parent_id, manager_id, contact, location, sort_order
+        FROM gw_departments
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insertDepartment" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_departments (name, parent_id, manager_id, contact, location, sort_order, created_at, updated_at)
+        VALUES (#{name}, #{parentId}, #{managerId}, #{contact}, #{location}, #{sortOrder}, NOW(), NOW())
+    </insert>
+
+    <update id="updateDepartment">
+        UPDATE gw_departments
+        SET name       = #{name},
+            parent_id  = #{parentId},
+            manager_id = #{managerId},
+            contact    = #{contact},
+            location   = #{location},
+            sort_order = #{sortOrder},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteDepartment">
+        DELETE FROM gw_departments WHERE id = #{id}
+    </delete>
+
+    <!-- ========== 직급 관리 ========== -->
+    <select id="findAllPositionsForAdmin" resultMap="AdminPositionResultMap">
+        SELECT id, name, level, approval_rank
+        FROM gw_positions
+        ORDER BY level
+    </select>
+
+    <insert id="insertPosition">
+        INSERT INTO gw_positions (name, level, approval_rank, created_at)
+        VALUES (#{name}, #{level}, #{approvalRank}, NOW())
+    </insert>
+
+    <update id="updatePosition">
+        UPDATE gw_positions
+        SET name          = #{name},
+            level         = #{level},
+            approval_rank = #{approvalRank}
+        WHERE id = #{id}
+    </update>
+
+    <!-- ========== 게시판 관리 ========== -->
+    <select id="findAllBoardsForAdmin" resultType="com.groupware.entity.Board">
+        SELECT id, name, department_id, description, created_at
+        FROM gw_boards
+        ORDER BY id
+    </select>
+
+    <insert id="insertBoard" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_boards (name, department_id, description, created_at)
+        VALUES (#{name}, #{departmentId}, #{description}, NOW())
+    </insert>
+
+    <update id="updateBoard">
+        UPDATE gw_boards
+        SET name          = #{name},
+            department_id = #{departmentId},
+            description   = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteBoard">
+        DELETE FROM gw_boards WHERE id = #{id}
+    </delete>
+
+    <!-- ========== 회의실 관리 ========== -->
+    <select id="findAllMeetingRooms" resultType="com.groupware.entity.MeetingRoom">
+        SELECT id, name, capacity, location, description, created_at
+        FROM gw_meeting_rooms
+        ORDER BY id
+    </select>
+
+    <insert id="insertMeetingRoom" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO gw_meeting_rooms (name, capacity, location, description, created_at)
+        VALUES (#{name}, #{capacity}, #{location}, #{description}, NOW())
+    </insert>
+
+    <update id="updateMeetingRoom">
+        UPDATE gw_meeting_rooms
+        SET name        = #{name},
+            capacity    = #{capacity},
+            location    = #{location},
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteMeetingRoom">
+        DELETE FROM gw_meeting_rooms WHERE id = #{id}
+    </delete>
+
+    <!-- 프로필 이미지 경로 업데이트 -->
+    <update id="updateProfileImagePath">
+        UPDATE gw_user_profiles
+        SET profile_image_path = #{imagePath},
+            updated_at         = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- ========== 통계 ========== -->
+    <select id="getAdminStats" resultType="map">
+        SELECT
+            (SELECT COUNT(*) FROM itsm_users WHERE active = true)                AS "totalUsers",
+            (SELECT COUNT(*) FROM itsm_users WHERE active = true
+             AND last_login_at >= NOW() - INTERVAL '30 days')                    AS "activeUsers",
+            (SELECT COUNT(*) FROM gw_notices)                                    AS "totalNotices",
+            (SELECT COUNT(*) FROM gw_posts)                                      AS "totalPosts",
+            (SELECT COUNT(*) FROM gw_approval_documents WHERE status = 'PENDING') AS "pendingApprovals",
+            (SELECT COUNT(*) FROM gw_files)                                       AS "totalFiles"
+    </select>
+
+</mapper>
