@@ -48,6 +48,20 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String generateRefreshToken(Long userId, String username, String role) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + refreshExpiration);
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim(Constants.Jwt.CLAIM_USER_ID, userId)
+                .claim(Constants.Jwt.CLAIM_USERNAME, username)
+                .claim(Constants.Jwt.CLAIM_ROLE, role)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
+                .compact();
+    }
+
     public Long getUserIdFromToken(String token) {
         Claims claims = parseClaims(token);
         return claims.get(Constants.Jwt.CLAIM_USER_ID, Long.class);
