@@ -51,7 +51,7 @@ const MOCK_MEETING_ROOMS = [
 
 /* ===== 스타일 ===== */
 const styles = {
-  page: { maxWidth: '1100px' },
+  page: { width: '100%' },
   header: { marginBottom: '24px' },
   title: { fontSize: '1.5rem', fontWeight: 800, color: '#0f766e', marginBottom: '4px' },
   subtitle: { fontSize: '0.875rem', color: '#64748b' },
@@ -113,7 +113,7 @@ const styles = {
   },
   searchBox: {
     padding: '8px 14px', border: '1px solid #e2e8f0', borderRadius: '8px',
-    fontSize: '0.85rem', width: '220px', outline: 'none',
+    fontSize: '0.85rem', width: '100%', maxWidth: '260px', outline: 'none',
   },
   roleBadge: {
     padding: '2px 8px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: 700,
@@ -210,38 +210,40 @@ function UsersTab({ users, departments, positions, onSave }) {
         />
       </div>
       <div style={styles.card}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              {['이름', '이메일', '부서', '직급', '역할', '입사일', ''].map(h => (
-                <th key={h} style={styles.th}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(u => (
-              <tr key={u.id}>
-                <td style={styles.td}>{u.name}</td>
-                <td style={styles.td}>{u.email}</td>
-                <td style={styles.td}>{u.department}</td>
-                <td style={styles.td}>{u.position}</td>
-                <td style={styles.td}>
-                  <span style={{
-                    ...styles.roleBadge,
-                    background: u.role === 'ADMIN' ? '#fef3c7' : '#f0f9ff',
-                    color: u.role === 'ADMIN' ? '#92400e' : '#0369a1',
-                  }}>
-                    {u.role}
-                  </span>
-                </td>
-                <td style={styles.td}>{u.joinedDate}</td>
-                <td style={styles.td}>
-                  <button style={styles.editBtn} onClick={() => openEdit(u)}>수정</button>
-                </td>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ ...styles.table, minWidth: '600px' }}>
+            <thead>
+              <tr>
+                {['이름', '이메일', '부서', '직급', '역할', '입사일', ''].map(h => (
+                  <th key={h} style={styles.th}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map(u => (
+                <tr key={u.id}>
+                  <td style={styles.td}>{u.name}</td>
+                  <td style={styles.td}>{u.email}</td>
+                  <td style={styles.td}>{u.department}</td>
+                  <td style={styles.td}>{u.position}</td>
+                  <td style={styles.td}>
+                    <span style={{
+                      ...styles.roleBadge,
+                      background: u.role === 'ADMIN' ? '#fef3c7' : '#f0f9ff',
+                      color: u.role === 'ADMIN' ? '#92400e' : '#0369a1',
+                    }}>
+                      {u.role}
+                    </span>
+                  </td>
+                  <td style={styles.td}>{u.joinedDate}</td>
+                  <td style={styles.td}>
+                    <button style={styles.editBtn} onClick={() => openEdit(u)}>수정</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {editUser && (
@@ -299,25 +301,27 @@ function CrudTab({ title, items, columns, onAdd, onEdit, onDelete, renderForm })
           <div style={styles.cardTitle}>{title}</div>
           <button style={styles.addBtn} onClick={openAdd}>+ 추가</button>
         </div>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              {columns.map(c => <th key={c.key} style={styles.th}>{c.label}</th>)}
-              <th style={styles.th}>관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(item => (
-              <tr key={item.id}>
-                {columns.map(c => <td key={c.key} style={styles.td}>{item[c.key]}</td>)}
-                <td style={styles.td}>
-                  <button style={styles.editBtn} onClick={() => openEdit(item)}>수정</button>
-                  <button style={styles.deleteBtn} onClick={() => onDelete(item.id)}>삭제</button>
-                </td>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ ...styles.table, minWidth: '400px' }}>
+            <thead>
+              <tr>
+                {columns.map(c => <th key={c.key} style={styles.th}>{c.label}</th>)}
+                <th style={styles.th}>관리</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map(item => (
+                <tr key={item.id}>
+                  {columns.map(c => <td key={c.key} style={styles.td}>{item[c.key]}</td>)}
+                  <td style={styles.td}>
+                    <button style={styles.editBtn} onClick={() => openEdit(item)}>수정</button>
+                    <button style={styles.deleteBtn} onClick={() => onDelete(item.id)}>삭제</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {isModalOpen && (

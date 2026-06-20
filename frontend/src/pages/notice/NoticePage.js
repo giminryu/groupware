@@ -16,7 +16,7 @@ const MOCK_NOTICES = [
 const PAGE_SIZE = 10;
 
 const styles = {
-  page: { maxWidth: '900px' },
+  page: { width: '100%' },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
   title: { fontSize: '1.4rem', fontWeight: 800, color: '#0f766e' },
   toolbar: { display: 'flex', gap: '10px', alignItems: 'center' },
@@ -26,7 +26,8 @@ const styles = {
     padding: '8px 14px',
     fontSize: '0.875rem',
     outline: 'none',
-    width: '220px',
+    width: '100%',
+    maxWidth: '260px',
     color: '#1e293b',
   },
   createBtn: {
@@ -150,42 +151,44 @@ function NoticePage() {
       ) : notices.length === 0 ? (
         <EmptyState icon="📢" title="공지사항이 없습니다" sub="등록된 공지사항이 없습니다." />
       ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>번호</th>
-              <th style={styles.th}>제목</th>
-              <th style={styles.th}>작성자</th>
-              <th style={styles.th}>날짜</th>
-              <th style={{ ...styles.th, textAlign: 'right' }}>조회수</th>
-            </tr>
-          </thead>
-          <tbody>
-            {notices.map((n, idx) => (
-              <tr
-                key={n.id}
-                style={{
-                  ...styles.trHover,
-                  background: hoveredRow === n.id ? '#f0fdfa' : '#fff',
-                }}
-                onClick={() => navigate(`/notice/${n.id}`)}
-                onMouseEnter={() => setHoveredRow(n.id)}
-                onMouseLeave={() => setHoveredRow(null)}
-              >
-                <td style={{ ...styles.td, color: '#94a3b8', width: '60px' }}>
-                  {(page - 1) * PAGE_SIZE + idx + 1}
-                </td>
-                <td style={styles.td}>
-                  {n.title}
-                  {n.viewRequired && <span style={styles.badge}>필독</span>}
-                </td>
-                <td style={{ ...styles.td, color: '#64748b' }}>{n.authorName}</td>
-                <td style={{ ...styles.td, color: '#64748b', whiteSpace: 'nowrap' }}>{formatDate(n.createdAt)}</td>
-                <td style={{ ...styles.td, textAlign: 'right', color: '#94a3b8' }}>{n.viewCount ?? 0}</td>
+        <div style={{ overflowX: 'auto', borderRadius: '12px' }}>
+          <table style={{ ...styles.table, minWidth: '600px' }}>
+            <thead>
+              <tr>
+                <th style={styles.th}>번호</th>
+                <th style={styles.th}>제목</th>
+                <th style={styles.th}>작성자</th>
+                <th style={styles.th}>날짜</th>
+                <th style={{ ...styles.th, textAlign: 'right' }}>조회수</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {notices.map((n, idx) => (
+                <tr
+                  key={n.id}
+                  style={{
+                    ...styles.trHover,
+                    background: hoveredRow === n.id ? '#f0fdfa' : '#fff',
+                  }}
+                  onClick={() => navigate(`/notice/${n.id}`)}
+                  onMouseEnter={() => setHoveredRow(n.id)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                >
+                  <td style={{ ...styles.td, color: '#94a3b8', width: '60px' }}>
+                    {(page - 1) * PAGE_SIZE + idx + 1}
+                  </td>
+                  <td style={styles.td}>
+                    {n.title}
+                    {n.viewRequired && <span style={styles.badge}>필독</span>}
+                  </td>
+                  <td style={{ ...styles.td, color: '#64748b' }}>{n.authorName}</td>
+                  <td style={{ ...styles.td, color: '#64748b', whiteSpace: 'nowrap' }}>{formatDate(n.createdAt)}</td>
+                  <td style={{ ...styles.td, textAlign: 'right', color: '#94a3b8' }}>{n.viewCount ?? 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <Pagination current={page} total={totalPages} onChange={setPage} />

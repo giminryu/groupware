@@ -17,7 +17,7 @@ function getAvatarColor(name) {
 
 const styles = {
   page: {
-    maxWidth: '600px',
+    width: '100%',
   },
   backBtn: {
     display: 'inline-flex',

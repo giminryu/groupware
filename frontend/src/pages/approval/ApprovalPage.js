@@ -31,7 +31,7 @@ const STATUS_CONFIG = {
 };
 
 const styles = {
-  page: { maxWidth: '1000px' },
+  page: { width: '100%' },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
   title: { fontSize: '1.4rem', fontWeight: 800, color: '#0f766e' },
   createBtn: {
@@ -142,38 +142,40 @@ function ApprovalPage() {
       ) : currentDocs.length === 0 ? (
         <div style={styles.emptyText}>문서가 없습니다.</div>
       ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>문서번호</th>
-              <th style={styles.th}>제목</th>
-              <th style={styles.th}>기안자</th>
-              <th style={styles.th}>문서유형</th>
-              <th style={styles.th}>상태</th>
-              <th style={styles.th}>기안일</th>
-              <th style={{ ...styles.th, textAlign: 'center' }}>진행상황</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentDocs.map((doc) => (
-              <tr
-                key={doc.id}
-                style={{ cursor: 'pointer', background: hoveredRow === doc.id ? '#f0fdfa' : '#fff' }}
-                onClick={() => navigate(`/approval/${doc.id}`)}
-                onMouseEnter={() => setHoveredRow(doc.id)}
-                onMouseLeave={() => setHoveredRow(null)}
-              >
-                <td style={{ ...styles.td, color: '#94a3b8', width: '80px' }}>#{doc.id}</td>
-                <td style={{ ...styles.td, fontWeight: 500 }}>{doc.title}</td>
-                <td style={{ ...styles.td, color: '#64748b' }}>{doc.applicantName}</td>
-                <td style={{ ...styles.td, color: '#64748b' }}>{DOC_TYPE_LABELS[doc.documentType] || doc.documentType}</td>
-                <td style={styles.td}><StatusBadge status={doc.status} /></td>
-                <td style={{ ...styles.td, color: '#64748b', whiteSpace: 'nowrap' }}>{doc.createdAt?.slice(0, 10)}</td>
-                <td style={{ ...styles.td, textAlign: 'center', color: '#64748b' }}>{doc.progress || '-'}</td>
+        <div style={{ overflowX: 'auto', borderRadius: '12px' }}>
+          <table style={{ ...styles.table, minWidth: '600px' }}>
+            <thead>
+              <tr>
+                <th style={styles.th}>문서번호</th>
+                <th style={styles.th}>제목</th>
+                <th style={styles.th}>기안자</th>
+                <th style={styles.th}>문서유형</th>
+                <th style={styles.th}>상태</th>
+                <th style={styles.th}>기안일</th>
+                <th style={{ ...styles.th, textAlign: 'center' }}>진행상황</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {currentDocs.map((doc) => (
+                <tr
+                  key={doc.id}
+                  style={{ cursor: 'pointer', background: hoveredRow === doc.id ? '#f0fdfa' : '#fff' }}
+                  onClick={() => navigate(`/approval/${doc.id}`)}
+                  onMouseEnter={() => setHoveredRow(doc.id)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                >
+                  <td style={{ ...styles.td, color: '#94a3b8', width: '80px' }}>#{doc.id}</td>
+                  <td style={{ ...styles.td, fontWeight: 500 }}>{doc.title}</td>
+                  <td style={{ ...styles.td, color: '#64748b' }}>{doc.applicantName}</td>
+                  <td style={{ ...styles.td, color: '#64748b' }}>{DOC_TYPE_LABELS[doc.documentType] || doc.documentType}</td>
+                  <td style={styles.td}><StatusBadge status={doc.status} /></td>
+                  <td style={{ ...styles.td, color: '#64748b', whiteSpace: 'nowrap' }}>{doc.createdAt?.slice(0, 10)}</td>
+                  <td style={{ ...styles.td, textAlign: 'center', color: '#64748b' }}>{doc.progress || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

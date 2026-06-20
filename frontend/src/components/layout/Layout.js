@@ -21,6 +21,8 @@ const styles = {
     flex: 1,
     padding: '24px',
     overflowY: 'auto',
+    overflowX: 'hidden',
+    minHeight: 'calc(100vh - 60px)',
   },
 };
 

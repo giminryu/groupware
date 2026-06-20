@@ -52,7 +52,7 @@ const MOCK_EMPLOYEES = [
 ];
 
 const styles = {
-  page: { maxWidth: '820px' },
+  page: { width: '100%' },
   backBtn: {
     background: 'none', border: 'none', color: '#64748b', cursor: 'pointer',
     fontSize: '0.875rem', padding: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '4px',
@@ -71,7 +71,7 @@ const styles = {
     background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0',
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '24px', marginBottom: '16px',
   },
-  templateGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
+  templateGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' },
   templateCard: (selected) => ({
     border: `2px solid ${selected ? '#0f766e' : '#e2e8f0'}`,
     borderRadius: '10px', padding: '16px', cursor: 'pointer',

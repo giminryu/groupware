@@ -9,7 +9,7 @@ const MOCK_BOARDS = [
 ];
 
 const styles = {
-  page: { maxWidth: '860px' },
+  page: { width: '100%' },
   backBtn: {
     display: 'inline-flex', alignItems: 'center', gap: '6px',
     color: '#0f766e', background: 'none', border: 'none',

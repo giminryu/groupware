@@ -23,7 +23,7 @@ const MOCK_BOOKINGS = {
 const HOURS = Array.from({ length: 10 }, (_, i) => `${String(i + 9).padStart(2, '0')}:00`);
 
 const styles = {
-  page: { maxWidth: '1000px' },
+  page: { width: '100%' },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
   title: { fontSize: '1.4rem', fontWeight: 800, color: '#0f766e' },
   backBtn: {

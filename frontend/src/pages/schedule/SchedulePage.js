@@ -14,7 +14,7 @@ const MOCK_SCHEDULES = [
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
 
 const styles = {
-  page: { maxWidth: '1100px' },
+  page: { width: '100%' },
   header: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px',
   },

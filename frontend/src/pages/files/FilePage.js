@@ -39,7 +39,7 @@ function formatSize(bytes) {
 }
 
 const styles = {
-  page: { maxWidth: '1100px' },
+  page: { width: '100%' },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
   title: { fontSize: '1.4rem', fontWeight: 800, color: '#0f766e' },
   toolbar: { display: 'flex', gap: '10px' },
@@ -329,53 +329,55 @@ function FilePage() {
               ))}
             </div>
           ) : (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>이름</th>
-                  <th style={styles.th}>크기</th>
-                  <th style={styles.th}>수정일</th>
-                  <th style={styles.th}>소유자</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>관리</th>
-                </tr>
-              </thead>
-              <tbody>
-                {files.map(item => (
-                  <tr
-                    key={item.id}
-                    style={{
-                      cursor: 'pointer',
-                      background: hoveredFile === item.id ? '#f0fdfa' : '#fff',
-                      transition: 'background 0.1s',
-                    }}
-                    onMouseEnter={() => setHoveredFile(item.id)}
-                    onMouseLeave={() => setHoveredFile(null)}
-                    onClick={() => handleFileClick(item)}
-                  >
-                    <td style={styles.td}>
-                      <span style={{ marginRight: '8px' }}>{getFileIcon(item)}</span>
-                      {item.name}
-                    </td>
-                    <td style={{ ...styles.td, color: '#64748b' }}>{formatSize(item.size)}</td>
-                    <td style={{ ...styles.td, color: '#94a3b8' }}>{item.createdAt?.slice(0, 10)}</td>
-                    <td style={{ ...styles.td, color: '#64748b' }}>{item.ownerName}</td>
-                    <td style={{ ...styles.td, textAlign: 'right' }}>
-                      {item.fileType === 'FILE' && (
-                        <button
-                          style={{
-                            fontSize: '0.78rem', color: '#dc2626', background: 'none',
-                            border: 'none', cursor: 'pointer', padding: '3px 8px',
-                          }}
-                          onClick={(e) => handleDelete(e, item)}
-                        >
-                          삭제
-                        </button>
-                      )}
-                    </td>
+            <div style={{ overflowX: 'auto', borderRadius: '12px' }}>
+              <table style={{ ...styles.table, minWidth: '600px' }}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>이름</th>
+                    <th style={styles.th}>크기</th>
+                    <th style={styles.th}>수정일</th>
+                    <th style={styles.th}>소유자</th>
+                    <th style={{ ...styles.th, textAlign: 'right' }}>관리</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {files.map(item => (
+                    <tr
+                      key={item.id}
+                      style={{
+                        cursor: 'pointer',
+                        background: hoveredFile === item.id ? '#f0fdfa' : '#fff',
+                        transition: 'background 0.1s',
+                      }}
+                      onMouseEnter={() => setHoveredFile(item.id)}
+                      onMouseLeave={() => setHoveredFile(null)}
+                      onClick={() => handleFileClick(item)}
+                    >
+                      <td style={styles.td}>
+                        <span style={{ marginRight: '8px' }}>{getFileIcon(item)}</span>
+                        {item.name}
+                      </td>
+                      <td style={{ ...styles.td, color: '#64748b' }}>{formatSize(item.size)}</td>
+                      <td style={{ ...styles.td, color: '#94a3b8' }}>{item.createdAt?.slice(0, 10)}</td>
+                      <td style={{ ...styles.td, color: '#64748b' }}>{item.ownerName}</td>
+                      <td style={{ ...styles.td, textAlign: 'right' }}>
+                        {item.fileType === 'FILE' && (
+                          <button
+                            style={{
+                              fontSize: '0.78rem', color: '#dc2626', background: 'none',
+                              border: 'none', cursor: 'pointer', padding: '3px 8px',
+                            }}
+                            onClick={(e) => handleDelete(e, item)}
+                          >
+                            삭제
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

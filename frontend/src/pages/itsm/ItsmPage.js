@@ -28,7 +28,7 @@ const TYPE_MAP = {
 };
 
 const styles = {
-  page: { maxWidth: '900px' },
+  page: { width: '100%' },
   header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' },
   title: { fontSize: '1.4rem', fontWeight: 800, color: '#0f766e', marginBottom: '4px' },
   subtitle: { fontSize: '0.875rem', color: '#64748b' },

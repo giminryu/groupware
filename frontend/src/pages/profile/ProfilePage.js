@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
 const styles = {
-  page: { maxWidth: '680px' },
+  page: { width: '100%' },
   title: { fontSize: '1.4rem', fontWeight: 800, color: '#0f766e', marginBottom: '4px' },
   subtitle: { fontSize: '0.875rem', color: '#64748b', marginBottom: '28px' },
   card: {
@@ -35,7 +35,7 @@ const styles = {
   profileName: { fontSize: '1.2rem', fontWeight: 800, color: '#0f766e', marginBottom: '4px' },
   profileMeta: { fontSize: '0.85rem', color: '#64748b' },
   grid: {
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px',
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px',
   },
   formGroup: { marginBottom: '0' },
   label: { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#64748b', marginBottom: '6px' },

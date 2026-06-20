@@ -29,7 +29,7 @@ const MOCK_POSTS = {
 const PAGE_SIZE = 10;
 
 const styles = {
-  page: { maxWidth: '1000px' },
+  page: { width: '100%' },
   header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
   title: { fontSize: '1.4rem', fontWeight: 800, color: '#0f766e' },
   layout: { display: 'flex', gap: '20px', alignItems: 'flex-start' },
@@ -180,45 +180,47 @@ function BoardPage() {
           ) : posts.length === 0 ? (
             <EmptyState icon="💬" title="게시물이 없습니다" sub="첫 번째 게시물을 작성해보세요." />
           ) : (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={{ ...styles.th, width: '50px' }}>번호</th>
-                  <th style={styles.th}>제목</th>
-                  <th style={styles.th}>작성자</th>
-                  <th style={styles.th}>날짜</th>
-                  <th style={{ ...styles.th, textAlign: 'right' }}>조회</th>
-                </tr>
-              </thead>
-              <tbody>
-                {posts.map((p, idx) => (
-                  <tr
-                    key={p.id}
-                    style={{
-                      cursor: 'pointer',
-                      background: hoveredRow === p.id ? '#f0fdfa' : '#fff',
-                      transition: 'background 0.1s',
-                    }}
-                    onClick={() => navigate(`/board/post/${p.id}`)}
-                    onMouseEnter={() => setHoveredRow(p.id)}
-                    onMouseLeave={() => setHoveredRow(null)}
-                  >
-                    <td style={{ ...styles.td, color: '#94a3b8' }}>{(page - 1) * PAGE_SIZE + idx + 1}</td>
-                    <td style={styles.td}>
-                      {p.title}
-                      {p.commentCount > 0 && (
-                        <span style={{ color: '#0f766e', fontSize: '0.78rem', marginLeft: '6px', fontWeight: 600 }}>
-                          [{p.commentCount}]
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ ...styles.td, color: '#64748b' }}>{p.authorName}</td>
-                    <td style={{ ...styles.td, color: '#94a3b8', whiteSpace: 'nowrap' }}>{formatDate(p.createdAt)}</td>
-                    <td style={{ ...styles.td, textAlign: 'right', color: '#94a3b8' }}>{p.viewCount ?? 0}</td>
+            <div style={{ overflowX: 'auto', borderRadius: '12px' }}>
+              <table style={{ ...styles.table, minWidth: '600px' }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...styles.th, width: '50px' }}>번호</th>
+                    <th style={styles.th}>제목</th>
+                    <th style={styles.th}>작성자</th>
+                    <th style={styles.th}>날짜</th>
+                    <th style={{ ...styles.th, textAlign: 'right' }}>조회</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {posts.map((p, idx) => (
+                    <tr
+                      key={p.id}
+                      style={{
+                        cursor: 'pointer',
+                        background: hoveredRow === p.id ? '#f0fdfa' : '#fff',
+                        transition: 'background 0.1s',
+                      }}
+                      onClick={() => navigate(`/board/post/${p.id}`)}
+                      onMouseEnter={() => setHoveredRow(p.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                    >
+                      <td style={{ ...styles.td, color: '#94a3b8' }}>{(page - 1) * PAGE_SIZE + idx + 1}</td>
+                      <td style={styles.td}>
+                        {p.title}
+                        {p.commentCount > 0 && (
+                          <span style={{ color: '#0f766e', fontSize: '0.78rem', marginLeft: '6px', fontWeight: 600 }}>
+                            [{p.commentCount}]
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ ...styles.td, color: '#64748b' }}>{p.authorName}</td>
+                      <td style={{ ...styles.td, color: '#94a3b8', whiteSpace: 'nowrap' }}>{formatDate(p.createdAt)}</td>
+                      <td style={{ ...styles.td, textAlign: 'right', color: '#94a3b8' }}>{p.viewCount ?? 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           <Pagination current={page} total={totalPages} onChange={setPage} />

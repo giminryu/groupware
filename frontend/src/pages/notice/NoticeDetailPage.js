@@ -12,7 +12,7 @@ const MOCK_NOTICES = {
 };
 
 const styles = {
-  page: { maxWidth: '860px' },
+  page: { width: '100%' },
   backBtn: {
     display: 'inline-flex',
     alignItems: 'center',

@@ -61,7 +61,7 @@ function formatDateTime(str) {
 }
 
 const styles = {
-  page: { maxWidth: '860px' },
+  page: { width: '100%' },
   backBtn: {
     background: 'none', border: 'none', color: '#64748b', cursor: 'pointer',
     fontSize: '0.875rem', padding: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '4px',

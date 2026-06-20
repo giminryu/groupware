@@ -18,7 +18,7 @@ const MOCK_TODAY_SCHEDULES = [
 ];
 
 const styles = {
-  page: { maxWidth: '960px' },
+  page: { width: '100%' },
   greeting: { fontSize: '1.6rem', fontWeight: 800, color: '#0f766e', marginBottom: '6px' },
   subGreeting: { fontSize: '0.9rem', color: '#64748b', marginBottom: '28px' },
   infoRow: { display: 'flex', gap: '16px', marginBottom: '28px', flexWrap: 'wrap' },
@@ -45,7 +45,7 @@ const styles = {
     color: '#fff', borderRadius: '8px', padding: '10px 18px',
     fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s', flexShrink: 0,
   },
-  twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' },
+  twoCol: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px', marginBottom: '24px' },
   sectionCard: {
     background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0',
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden',
